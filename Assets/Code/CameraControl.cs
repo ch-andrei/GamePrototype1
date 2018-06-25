@@ -9,7 +9,7 @@ using System;
 [AddComponentMenu("Camera-Control/Keyboard")]
 public class CameraControl : MonoBehaviour
 {
-    public float globalSensitivity = 10f; // global camera speed sensitivity
+    public float globalSensitivity = 1f; // global camera speed sensitivity
 
     #region MouseControlConfiguration
 
@@ -30,7 +30,7 @@ public class CameraControl : MonoBehaviour
     // mouse rotation control
     [Header("Mouse Rotation")]
     public bool allowMouseRotation = true;
-    public float mouseRotationSensitivityModifier = 25f; // mouse rotation movement speed modifier
+    public float mouseRotationSensitivityModifier = 50f; // mouse rotation movement speed modifier
 
     // zoom with FOV 
     [Header("Camera zoom")]
@@ -46,7 +46,7 @@ public class CameraControl : MonoBehaviour
     [Header("Camera movement inertia")]
     public bool allowCameraInertia = true;
     [Range(0.01f, 0.99f)]
-    public float inertiaDecay = 0.95f;
+    public float inertiaDecay = 0.95f; // higher means slower decay
 
     // camera restriction
     [Header("Camera restriction")]
@@ -62,7 +62,7 @@ public class CameraControl : MonoBehaviour
     public float limiterInertia = 0.1f;
 
     public float cameraLimitDistance = 500f; // how far camera can move away from the player
-    public float minCameraToGroundDistance = 2f; // how close to ground the camera can go before limiter will start resisting
+    public float minCameraToGroundDistance = 0.5f; // how close to ground the camera can go before limiter will start resisting
     public float maxCameraToGroundDistance = 200f; // how high camera can go before limiter will start resisting
 
     public float cameraTooHighSpeedLimiter = 1.5f; // lower means less resistance
