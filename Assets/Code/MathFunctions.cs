@@ -1,10 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.Runtime.Remoting.Messaging;
 using Boo.Lang;
 using UnityEngine;
-using UnityEngine.Assertions.Comparers;
 
 namespace MathFunctions {
     public static class Easing
@@ -79,7 +76,7 @@ namespace MathFunctions {
         }
     }
 
-    public static class AngleConversion
+    public static class Angles
     {
         public static float Deg2Rad(float deg)
         {

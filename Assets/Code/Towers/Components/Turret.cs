@@ -1,34 +1,40 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using JetBrains.Annotations;
+using Unity.Entities;
 using UnityEngine;
 
-using MathFunctions;
+using Code;
 
+[RequireComponent(typeof(GameObjectEntity))]
 public class Turret : MonoBehaviour
 {
-    [Range(1, 100)]
-    public int FireRate = 10;
+    public GameObject Gun;
     
-    [Range(1, 25)]
-    public float FireRange = 10f;
+    // maximum speed of rotation in degrees
+    [Range(0.1f, 1000f)] public float MaxRotationSpeed = 25f; 
+    public float MaxRotationSpeedRadians => MathFunctions.Angles.Deg2Rad(MaxRotationSpeed);
     
-    [Range(0f, 1f)]
-    public float Damage = 0.1f;
-    
-    [Range(0.1f, 1000f)]
-    public float MaxRotationSpeed = 25f; // maximum speed of rotation in degrees
-    public float MaxRotationSpeedRadians => MathFunctions.AngleConversion.Deg2Rad(MaxRotationSpeed);
+    // maximum X rotation (up/down) angle in relation to horizon 
+    [Range(0f, 90f)] public float MaxRotationX = 25f; 
+    public float MaxRotationXRadians => MathFunctions.Angles.Deg2Rad(MaxRotationX);
 
-    [Range(0f, 90f)]
-    public float MaxYRotationDelta = 25f; // maximum Y rotation angle in relation to horizon
-    public float MaxYRotationDeltaRadians => MathFunctions.AngleConversion.Deg2Rad(MaxYRotationDelta);
-    
-    public GameObject Target { get; set; }
+    [Range(0.0001f, 1f)] public float IdleNewDirectionProbability = 0.005f;
 
+    public bool ShowAimAssist;
+       
+    [HideInInspector]
+    public GameObject AimAssist;
+    
+    [HideInInspector]
+    public Vector3 TargetPos;
+    
+    [HideInInspector]
+    public GameObject TargetObject;
+        
     public void Start()
     {
-        Target = null;
+        TargetPos = Gun.transform.position + Gun.transform.forward; // initialize to forward
+        AimAssist = Instantiate(Bootstrapper.PrefabManager.TowerAimAssistIndicator, Gun.transform);
     }
 }

@@ -7,14 +7,11 @@ using UnityEngine.AI;
 public class Agent : MonoBehaviour 
 {
     public GameObject Goal;
+
+    public bool HasGoal;
+
+    public void Start()
+    {
+        HasGoal = false;
+    }
 }
-
-
-//public class AgentSystem : ComponentSystem
-//{
-//    override
-//    protected void OnUpdate()
-//    {
-//        
-//    }
-//}

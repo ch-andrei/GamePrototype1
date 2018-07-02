@@ -1,152 +1,255 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Security.Cryptography.X509Certificates;
-using UnityEngine;
+﻿using UnityEngine;
 using Unity.Entities;
 
-using MathFunctions;
 using Code.Towers.Components;
 
-public class TowerAimingSystem : ComponentSystem
+namespace Code.Towers
 {
-    struct AnimatedTurretsComponent
+    public class TowerAimingSystem : ComponentSystem
     {
-        public int Length;
-        public ComponentArray<Transform> transforms;
-        public ComponentArray<Turret> turrets;
-        public ComponentArray<AnimatedTurret> animated;
-    }
-    
-    [Inject] AnimatedTurretsComponent animatedTurretsComponent;
-
-    struct TowerTarget
-    {
-        public int Length;
-        public ComponentArray<Transform> transforms;
-        public ComponentArray<Targetable> targetables;
-    }
-    
-    [Inject] TowerTarget targetComponents;
-
-    protected override void OnUpdate()
-    {
-        float newDirectionProbability = 0.005f;
-        float targetingAngle = 1f;
-        
-        var deltaTime = Time.deltaTime;
-        
-        for (int i = 0; i < animatedTurretsComponent.Length; i++)
+        struct AnimatedTurretsComponent
         {
-            Turret turret = animatedTurretsComponent.turrets[i];
-            AnimatedTurret animated = animatedTurretsComponent.animated[i];
-
-            // find closest target for current tower and update
+            public int Length;
+            public ComponentArray<Transform> Transforms;
+            public ComponentArray<Turret> Turrets;
+            public ComponentArray<Shooter> Shooters;
+        }
+        
+        [Inject] AnimatedTurretsComponent TurretComponents;
+    
+        struct TowerTarget
+        {
+            public int Length;
+            public ComponentArray<Transform> Transforms;
+            public ComponentArray<Targetable> Targetables;
+        }
+        
+        [Inject] TowerTarget TargetComponents;
+    
+        protected override void OnUpdate()
+        {
+            var time = Time.time;
+            var deltaTime = Time.deltaTime;
+            
+            for (int i = 0; i < TurretComponents.Length; i++)
             {
-                int closestTarget = -1;
-                float closestDistance = float.MaxValue;
-                for (int j = 0; j < targetComponents.Length; j++)
+                Transform transform = TurretComponents.Transforms[i];
+                Turret turret = TurretComponents.Turrets[i];
+                Shooter shooter = TurretComponents.Shooters[i];
+    
+                // find closest target for current tower and update
                 {
-                    float distance = Vector3.Distance(targetComponents.transforms[j].position, turret.transform.position);
-                    if (distance < closestDistance)
+                    int closestTarget = -1;
+                    float closestDistance = float.MaxValue;
+                    
+                    int closestTargetNoCheck = -1;
+                    float closestDistanceNoCheck = float.MaxValue;
+                    
+                    
+                    for (int j = 0; j < TargetComponents.Length; j++)
                     {
-                        closestDistance = distance;
-                        closestTarget = j;
+                        Transform target = TargetComponents.Transforms[j];
+                        float distance = Vector3.Distance(target.position, transform.position);
+                        
+                        if (distance < closestDistance)
+                        {
+                            if (HasTargetableTarget(turret, shooter, target.transform))
+                            {
+                                closestTarget = j;
+                                closestDistance = distance;
+                            }
+                        }
+
+                        // without checking targetable
+                        // needed for aiming at object if its too close, but out of range
+                        if (distance < closestDistanceNoCheck)
+                        {
+                            closestTargetNoCheck = j;
+                            closestDistanceNoCheck = distance;
+                        }
+                    }
+    
+                    turret.TargetObject = null;
+                    // update target
+                    if (closestTarget == -1)
+                    {
+                        if (closestTargetNoCheck != -1)
+                            turret.TargetObject = TargetComponents.Transforms[closestTargetNoCheck].gameObject;
+                    }
+                    else
+                    {
+                        turret.TargetObject = TargetComponents.Transforms[closestTarget].gameObject;
                     }
                 }
-
-                if (closestTarget != -1)
+    
+                // animation and aiming control flags
+                bool hasTargetableTarget = turret.TargetObject != null &&
+                                           TargetInRange(turret, shooter, turret.TargetObject.transform);
+                bool idleAnimation = !hasTargetableTarget;
+                
+                turret.AimAssist.SetActive(turret.ShowAimAssist && hasTargetableTarget);
+                turret.TargetPos = hasTargetableTarget ? turret.TargetObject.transform.position : turret.TargetPos;
+    
+                Vector3 toTarget = turret.TargetPos - turret.Gun.transform.position;
+                Quaternion toTargetQuaternion = Quaternion.LookRotation(toTarget);
+                
+                bool targetLock = false;
+                float angleDeltaCrt = Vector3.Angle(toTarget, turret.Gun.transform.forward);
+                if (angleDeltaCrt < shooter.LockonAngle)
                 {
-                    turret.Target = targetComponents.transforms[closestTarget].gameObject;
+                    targetLock = true;
                 }
-            }
-
-            bool targetLock = false;
-            bool hasTarget = turret.Target != null;
-            bool targetInRange = hasTarget && 
-                                 TargetInRange(animated.transform.position, turret.Target.transform.position,
-                                     turret.FireRange);
-
-            bool idleAnimation = !targetInRange;
-
-            animated.Target = targetInRange ? turret.Target.transform.position : animated.Target;
-
-            Vector3 toTarget = animated.Target - animated.Gun.transform.position;
-            float angleDeltaCrt = Vector3.Angle(toTarget, animated.Gun.transform.forward);
-            
-            // recalculate animation parameters
-            Quaternion toTargetQuaternion = Quaternion.LookRotation(toTarget);
-            
-            if (angleDeltaCrt < targetingAngle)
-            {
-                targetLock = true;
-            }
-            
-            // apply rotation
-            if (!targetLock)
-            {
-                float lerpRatio = turret.MaxRotationSpeed / (angleDeltaCrt + 1e-9f) * deltaTime;
-                
-                // calculate the Quaternion for the rotation
-                var rotGun = Quaternion.Slerp(animated.Gun.transform.rotation, toTargetQuaternion, lerpRatio);
-                var rotTurret = Quaternion.Slerp(animated.Gun.transform.rotation, toTargetQuaternion, lerpRatio);
-                
-                // Apply the rotation to turret (vertical)
-                animated.transform.rotation = rotTurret;
-                animated.transform.eulerAngles = new Vector3(0f, animated.transform.eulerAngles.y, 0f); // only rotate y
-                
-                // Apply local rotation to gun (horizontal)
-                animated.Gun.transform.rotation = rotGun; 
-                animated.Gun.transform.localEulerAngles = new Vector3(
-                    Mathf.Clamp(animated.Gun.transform.localEulerAngles.x, 
-                        -turret.MaxYRotationDelta, turret.MaxYRotationDelta), 
-                    0f, 
-                    0f); // only rotate x
-               
-                toTarget = animated.Target - animated.Gun.transform.position;
-                
-                float angleDeltaAfter = Vector3.Angle(toTarget, animated.Gun.transform.forward);
-                Debug.Log("angle diff b/a " + angleDeltaCrt + "/" + angleDeltaAfter + 
-                          "; Has Target " + hasTarget + " in range " + targetInRange + 
-                          "; targetLock " + targetLock + "; is idle " + idleAnimation 
-                          );
-            }
-            else
-            {
-                // shoot at target
-                
-            }
-            
-            
-            if (idleAnimation && targetLock)
-            {
-                // update rotation direction
-                var random = UnityEngine.Random.Range(0f, 1f);
-                if (random < newDirectionProbability)
+    
                 {
-                    float theta = 2 * Mathf.PI * UnityEngine.Random.Range(0f, 1f);                    
-                    Vector3 direction = new Vector3(Mathf.Sin(theta), 0, Mathf.Cos(theta));
+                    // apply rotation
                     
-                    // compute a random target within fire range
-                    animated.Target = animated.Gun.transform.position + direction;
+                    float lerpRatio = turret.MaxRotationSpeed / (Mathf.Max(angleDeltaCrt, 0.001f)) * deltaTime;
+                    lerpRatio = Mathf.Clamp(lerpRatio, 0f, 1f);
+                    
+                    // calculate the Quaternion for the rotation
+                    var rotGun = Quaternion.Slerp(turret.Gun.transform.rotation, toTargetQuaternion, lerpRatio);
+                    var rotTurret = Quaternion.Slerp(turret.Gun.transform.rotation, toTargetQuaternion, lerpRatio);
+                    
+                    // Apply the rotation to turret (horizontal: left/right)
+                    transform.rotation = rotTurret;
+                    transform.eulerAngles = new Vector3(0f, transform.eulerAngles.y, 0f); // only rotate y
+                    
+                    // Apply local rotation to gun (vertical: up/down)
+                    turret.Gun.transform.rotation = rotGun; 
+                    turret.Gun.transform.localEulerAngles = new Vector3(
+                        Mathf.Clamp(turret.Gun.transform.localEulerAngles.x, 
+                            -turret.MaxRotationX, turret.MaxRotationX), 
+                        0f, 
+                        0f); // only rotate x
+                   
+                    toTarget = turret.TargetPos - turret.Gun.transform.position;
+                    
+    //                float angleDeltaAfter = Vector3.Angle(toTarget, turret.Gun.transform.forward);
+    //                Debug.Log("angle diff b/a/del/speed " + angleDeltaCrt + "/" + angleDeltaAfter + 
+    //                          "/" + (angleDeltaCrt - angleDeltaAfter) + 
+    //                          "/" + (angleDeltaCrt - angleDeltaAfter) / deltaTime +
+    //                          "; lerpRatio " + lerpRatio + "; is targetable " + targetIsTargetable + 
+    //                          "; targetLock " + targetLock + "; is idle " + idleAnimation 
+    //                          );
+                }
+                
+                if (hasTargetableTarget && targetLock)
+                {
+                    // shoot at target
+                    
+                    if (time - shooter.TimeAtShot >= shooter.SecondsBetweenShots)
+                    {
+                        var projectileSpawnData = new ProjectileSpawnData()
+                        {
+                            Position = turret.Gun.transform.position,
+                            Direction = turret.Gun.transform.forward,
+                            TimeAtSpawn = time,
+                            Type = shooter.ProjectileType,
+                            Force = shooter.ProjectileForce,
+                        };
+                        
+                        // TODO; convert to a pool of objects
+                        TurretSpawnProjectile(turret, shooter, projectileSpawnData);
+                                                
+                        shooter.TimeAtShot = time;
+                    }
+                    
+                }
+                
+                if (idleAnimation && targetLock)
+                {
+                    // update rotation direction
+                    var random = UnityEngine.Random.Range(0f, 1f);
+                    if (random < turret.IdleNewDirectionProbability)
+                    {
+                        // compute a random vector
+                        float theta = 2 * Mathf.PI * UnityEngine.Random.Range(0f, 1f); // random angle over circle
+    //                    theta = UnityEngine.Random.Range(0f, 1f) > 0.5 ? Mathf.PI - 1e-3f : 2 * Mathf.PI - 1e-3f; // test
+                        Vector3 direction = new Vector3(Mathf.Cos(theta), 0, Mathf.Sin(theta));
+                        
+                        // compute a random target within fire range
+                        turret.TargetPos = transform.parent.position + direction * 10f;
+                    }
                 }
             }
         }
-    }
     
-    public static bool TargetInRange(Vector3 position, Vector3 targetPosition, float range)
-    {
-        return Vector3.Distance(position, targetPosition) < range;
-    }
-
-    public static bool ModifyTarget(Vector3 target, AnimatedTurret animatedTurret)
-    {
-        if (animatedTurret.Target == target)
-            return false;
-        else
+        private static void TurretSpawnProjectile(Turret turret, Shooter shooter, 
+            ProjectileSpawnData projectileSpawnData)
         {
-            animatedTurret.Target = target;
-            return true;
+            GameObject projectilePrefab = null;
+            if (projectileSpawnData.Type == EProjectileType.DirectImpact)
+            {
+                projectilePrefab = Bootstrapper.PrefabManager.ProjectileDirectImpact;
+            }
+            else if (projectileSpawnData.Type == EProjectileType.Explosive)
+            {
+                projectilePrefab = Bootstrapper.PrefabManager.ProjectileExplosive;
+            }
+            else
+            {
+                // TODO:
+                // handle other projectile types if any
+            }
+
+            if (projectilePrefab == null)
+                return;
+
+            GameObject shellPrefab = Bootstrapper.PrefabManager.EmptyShell;
+            
+            // Parent object
+            GameObject Projectles = GameObject.FindGameObjectWithTag("Projectiles");
+            
+            GameObject shellObject = GameObject.Instantiate(shellPrefab, Projectles.transform);
+            GameObject projectileObject = GameObject.Instantiate(projectilePrefab, Projectles.transform);
+            
+            Vector3 spawnPos = turret.Gun.transform.position;
+
+            shellObject.transform.position = spawnPos;
+            projectileObject.transform.position = spawnPos + turret.Gun.transform.forward;
+            
+            ConfigureDespawnable(shellObject, projectileSpawnData);
+            ConfigureDespawnable(projectileObject, projectileSpawnData);
+            ConfigureProjectile(projectileObject, projectileSpawnData);
+        }
+
+        private static void ConfigureDespawnable(GameObject gameObject, ProjectileSpawnData projectileSpawnData,
+            float timeToLive = -1)
+        {
+            // configure despawnable component of the projectile
+            Despawnable despawnable = gameObject.GetComponent<Despawnable>();
+            despawnable.AllowDespawn = true;
+            despawnable.TimeAtSpawn = projectileSpawnData.TimeAtSpawn;
+            if (timeToLive >= 0)
+            {
+                despawnable.TimeToLive = timeToLive;
+            }
+        }
+        
+        private static void ConfigureProjectile(GameObject gameObject, ProjectileSpawnData projectileSpawnData)
+        {
+            // configure projectile component of the projectile
+            Projectile projectile = gameObject.gameObject.GetComponent<Projectile>();
+//            projectile.Direction = projectileSpawnData.Direction;
+//            projectile.StartingForce = projectileSpawnData.Force;
+            Rigidbody rigidbody = gameObject.GetComponent<Rigidbody>();
+            rigidbody.AddForce(projectileSpawnData.Direction * projectileSpawnData.Force, ForceMode.Impulse);
+        }
+    
+        private static bool HasTargetableTarget(Turret turret, Shooter shooter, Transform target)
+        {
+            Quaternion toTarget = Quaternion.LookRotation(target.transform.position - 
+                                                                       turret.Gun.transform.position);
+    
+            bool inRange = TargetInRange(turret, shooter, target);
+            inRange &= Mathf.Abs(toTarget.eulerAngles.x) <= turret.MaxRotationX;
+    
+            return inRange;
+        }
+        
+        private static bool TargetInRange(Turret turret, Shooter shooter, Transform target)
+        {
+            return Vector3.Distance(target.transform.position, turret.transform.position) < shooter.FireRange;
         }
     }
 }
