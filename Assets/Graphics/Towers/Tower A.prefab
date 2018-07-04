@@ -1621,11 +1621,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Gun: {fileID: 1598008594873780}
-  MaxRotationSpeed: 51.5
-  MaxRotationX: 25
+  MaxRotationSpeed: 90
+  MaxRotationXVertical: 25
   IdleNewDirectionProbability: 0.005
-  AimAssistIndicator: {fileID: 1743066704148654, guid: 4629444b056507f4398f525e2dd3ffec,
-    type: 2}
   ShowAimAssist: 1
   AimAssist: {fileID: 0}
   TargetPos: {x: 0, y: 0, z: 0}
@@ -1641,17 +1639,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 615b8da9d3be5004eafa00a4843748bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ProjectilePrefab: {fileID: 1717102054967564, guid: 8b678a8c46ab65b4da3215f3e909f062,
-    type: 2}
+  ProjectileType: 1
   ProjectileForce: 100
-  RangeIndicatorPrefab: {fileID: 1636256128134902, guid: 5f48fe78fd68cec4c88ac013d0416db4,
-    type: 2}
+  SecondsBetweenShots: 0.01
+  LockonAngle: 1
+  FireRange: 15
   RangeIndicatorThickness: 0.001
   RangeIndicator: {fileID: 0}
-  SecondsBetweenShots: 0.01
-  FireRange: 10
   TimeAtShot: 0
-  LockonAngle: 1
 --- !u!136 &136952276901054654
 CapsuleCollider:
   m_ObjectHideFlags: 1

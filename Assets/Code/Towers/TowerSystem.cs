@@ -1,6 +1,8 @@
-﻿using UnityEngine;
+﻿using Code.Tools;
+using UnityEngine;
 using Unity.Entities;
 
+using Code.Tools;
 using Code.Towers.Components;
 
 namespace Code.Towers
@@ -118,7 +120,7 @@ namespace Code.Towers
                     turret.Gun.transform.rotation = rotGun; 
                     turret.Gun.transform.localEulerAngles = new Vector3(
                         Mathf.Clamp(turret.Gun.transform.localEulerAngles.x, 
-                            -turret.MaxRotationX, turret.MaxRotationX), 
+                            -turret.MaxRotationXVertical, turret.MaxRotationXVertical), 
                         0f, 
                         0f); // only rotate x
                    
@@ -198,40 +200,44 @@ namespace Code.Towers
             GameObject shellPrefab = Bootstrapper.PrefabManager.EmptyShell;
             
             // Parent object
-            GameObject Projectles = GameObject.FindGameObjectWithTag("Projectiles");
+            GameObject Projectiles = GameObject.FindGameObjectWithTag("Projectiles");
+            Transform parent = Projectiles == null ? null : Projectiles.transform;
             
-            GameObject shellObject = GameObject.Instantiate(shellPrefab, Projectles.transform);
-            GameObject projectileObject = GameObject.Instantiate(projectilePrefab, Projectles.transform);
+            GameObject shellObject = GameObject.Instantiate(shellPrefab,  parent);
+            GameObject projectileObject = GameObject.Instantiate(projectilePrefab, parent);
             
             Vector3 spawnPos = turret.Gun.transform.position;
 
             shellObject.transform.position = spawnPos;
-            projectileObject.transform.position = spawnPos + turret.Gun.transform.forward;
-            
+            projectileObject.transform.position = spawnPos + turret.Gun.transform.forward * 2;
+
+            projectileObject.transform.rotation = Quaternion.LookRotation(turret.Gun.transform.forward);
+
+            ConfigureShellForce(shellObject);
             ConfigureDespawnable(shellObject, projectileSpawnData);
             ConfigureDespawnable(projectileObject, projectileSpawnData);
             ConfigureProjectile(projectileObject, projectileSpawnData);
         }
 
-        private static void ConfigureDespawnable(GameObject gameObject, ProjectileSpawnData projectileSpawnData,
-            float timeToLive = -1)
+        private static void ConfigureShellForce(GameObject gameObject)
+        {
+            Rigidbody rigidbody = gameObject.GetComponent<Rigidbody>();
+            Vector3 shellDirection = WarpSampler.Warp(WarpSampler.EWarpType.ECosineHemisphere);
+            rigidbody.AddForce(shellDirection * 2f, ForceMode.Impulse);
+            rigidbody.AddTorque(shellDirection);
+        }
+
+        private static void ConfigureDespawnable(GameObject gameObject, ProjectileSpawnData projectileSpawnData)
         {
             // configure despawnable component of the projectile
             Despawnable despawnable = gameObject.GetComponent<Despawnable>();
-            despawnable.AllowDespawn = true;
             despawnable.TimeAtSpawn = projectileSpawnData.TimeAtSpawn;
-            if (timeToLive >= 0)
-            {
-                despawnable.TimeToLive = timeToLive;
-            }
         }
         
         private static void ConfigureProjectile(GameObject gameObject, ProjectileSpawnData projectileSpawnData)
         {
             // configure projectile component of the projectile
             Projectile projectile = gameObject.gameObject.GetComponent<Projectile>();
-//            projectile.Direction = projectileSpawnData.Direction;
-//            projectile.StartingForce = projectileSpawnData.Force;
             Rigidbody rigidbody = gameObject.GetComponent<Rigidbody>();
             rigidbody.AddForce(projectileSpawnData.Direction * projectileSpawnData.Force, ForceMode.Impulse);
         }
@@ -242,7 +248,7 @@ namespace Code.Towers
                                                                        turret.Gun.transform.position);
     
             bool inRange = TargetInRange(turret, shooter, target);
-            inRange &= Mathf.Abs(toTarget.eulerAngles.x) <= turret.MaxRotationX;
+            inRange &= Mathf.Abs(toTarget.eulerAngles.x) <= turret.MaxRotationXVertical;
     
             return inRange;
         }

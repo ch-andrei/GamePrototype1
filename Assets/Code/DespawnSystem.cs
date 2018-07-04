@@ -16,59 +16,72 @@ namespace Code
     
         [Inject] DespawnableComponent DespawnableComponents;
 
-        public const float ForceDespawnAlphaMin = 1e-3f;
+        public const float ForceDespawnEpsilon = 1e-3f;
 
         protected override void OnUpdate()
         {
             float time = Time.time;
-            float deltaTime = Time.deltaTime;
 
-            var toDestroy = new List<GameObject>();
+            var toDestroy = new List<GameObject>(); // despawnable objects that must be destroyed
             
             for (int i = 0; i < DespawnableComponents.Length; i++)
             {
                 Despawnable despawnable = DespawnableComponents.Despawnables[i];
-                Transform transform = DespawnableComponents.Transforms[i];
-                
-                if (despawnable != null)
+
+                if (despawnable != null && despawnable.AllowDespawn)
                 {
-                    Animated animated = despawnable.Animated;
-                    
-                    float timeAlive = time - despawnable.TimeAtSpawn;
-                    
-                    // animate despawn
                     bool destroy = false;
-                    if (despawnable.AllowDespawn && timeAlive >= despawnable.TimeToLive)
-                    {
-                        if (animated.Enabled)
+                    bool startedOrEnqueued = despawnable.StartDespawn || despawnable.EnqueueDespawn;
+                    if (despawnable.TimeBeforeDespawnStart >= 0 || startedOrEnqueued)
+                    { 
+                        float timeAlive = time - despawnable.TimeAtSpawn;
+
+                        // animate despawn
+                        if (startedOrEnqueued || timeAlive >= despawnable.TimeBeforeDespawnStart)
                         {
-                            // FADE effect
-                            var meshRenderers = despawnable.MeshRenderers;
-                            
-                            float lerp = Mathf.Clamp((time - animated.AnimationTimeStart) / animated.AnimationTime, 0f, 1f);
-                            float alpha = Mathf.Lerp(animated.Start, animated.End, animated.Curve.Evaluate(lerp));
-                            
-                            for (int j = 0; j < meshRenderers.Count; j++)
+                            // initialize despawn animation
+                            if (!despawnable.StartDespawn)
                             {
-                                var meshRenderer = meshRenderers[j];
-                        
-                                Color color = meshRenderer.material.color;
-                                color.a *= alpha;
-                                meshRenderer.material.color = color;
+                                despawnable.StartDespawn = true;
+                                despawnable.TimeAnimatedFloat.AnimationTimeStart = time;
                             }
                             
-                            if (alpha < ForceDespawnAlphaMin)
+                            TimeAnimatedFloat timeAnimatedFloat = despawnable.TimeAnimatedFloat;
+                            if (timeAnimatedFloat.Enabled)
                             {
-                                despawnable.ForceDespawn = true;
+                                if (timeAnimatedFloat.AnimationTime < ForceDespawnEpsilon)
+                                {
+                                    destroy = true;
+                                }
+                                else
+                                {
+                                    // FADE effect
+                                    var meshRenderers = despawnable.MeshRenderers;
+
+                                    float lerp = Mathf.Clamp((time - timeAnimatedFloat.AnimationTimeStartDelayed) / 
+                                                             timeAnimatedFloat.AnimationTime,
+                                        0f, 1f);
+                                    float alpha = Mathf.Lerp(timeAnimatedFloat.Start, timeAnimatedFloat.End, 
+                                        timeAnimatedFloat.Curve.Evaluate(lerp));
+
+                                    for (int j = 0; j < meshRenderers.Count; j++)
+                                    {
+                                        var meshRenderer = meshRenderers[j];
+
+                                        Color color = meshRenderer.material.color;
+                                        color.a = alpha;
+                                        meshRenderer.material.color = color;
+                                    }
+
+                                    if (alpha < ForceDespawnEpsilon)
+                                    {
+                                        destroy = true;
+                                    }
+                                }
                             }
-                        }
-                    
-                        if (timeAlive >= despawnable.TimeToLive + animated.AnimationTime)
-                        {
-                            destroy = true;
                         }
                     }
-
+                    
                     if (despawnable.ForceDespawn || destroy)
                     {
                         toDestroy.Add(DespawnableComponents.Transforms[i].gameObject);

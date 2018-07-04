@@ -47,10 +47,9 @@ public class AgentSystem : ComponentSystem {
                     float distanceToGoal = Vector3.Distance(navMeshAgent.destination,
                         AgentComponents.Transforms[i].position);
 
-                    if (distanceToGoal < 2f && !despawnable.AllowDespawn)
+                    if (distanceToGoal < 2f && !despawnable.StartDespawn)
                     {
-                        despawnable.AllowDespawn = true;
-                        despawnable.TimeAtSpawn = time;
+                        despawnable.EnqueueDespawn = true;
                     }
                 }
                 else

@@ -14,6 +14,6 @@ namespace Code
         public GameObject EmptyShell;
         
         // Explosives
-        public GameObject ExplosiveSphere;
+        public GameObject Explosion;
     }
 }

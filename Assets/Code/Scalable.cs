@@ -8,11 +8,11 @@ namespace Code
 {
     public class Scalable : MonoBehaviour
     {
-        public Animated Animated;
+        public TimeAnimatedFloat TimeAnimatedFloat;
 
         public void Start()
         {
-            this.Animated.AnimationTimeStart = Time.time;
+            this.TimeAnimatedFloat.AnimationTimeStart = Time.time;
         }
     }
 
@@ -36,11 +36,11 @@ namespace Code
                 Transform transform = Scalables.Transforms[i];
                 Scalable scalable = Scalables.Scalables[i];
                 
-                Animated animated = scalable.Animated;
-                if (animated.Enabled)
+                TimeAnimatedFloat timeAnimatedFloat = scalable.TimeAnimatedFloat;
+                if (timeAnimatedFloat.Enabled)
                 {
-                    float lerp = Mathf.Clamp((time - animated.AnimationTimeStart) / animated.AnimationTime, 0f, 1f);
-                    float scale = Mathf.Lerp(animated.Start, animated.End, animated.Curve.Evaluate(lerp));
+                    float lerp = Mathf.Clamp((time - timeAnimatedFloat.AnimationTimeStart) / timeAnimatedFloat.AnimationTime, 0f, 1f);
+                    float scale = Mathf.Lerp(timeAnimatedFloat.Start, timeAnimatedFloat.End, timeAnimatedFloat.Curve.Evaluate(lerp));
 
                     transform.localScale = new Vector3(scale, scale, scale);
                 }

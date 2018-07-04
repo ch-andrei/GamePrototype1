@@ -32,7 +32,7 @@ public class SpawnerSystem : ComponentSystem {
                     var spawnedObject = Object.Instantiate(spawner.SpawnedObject, spawner.transform);
                     spawnedObject.transform.parent = Agents.transform;
                     
-                    var despawnables = Utilities.GetComponentsInChildren<Despawnable>(spawnedObject.transform);
+                    var despawnables = Utilities.GetComponentsInHierarchy<Despawnable>(spawnedObject.transform);
                     foreach (var despawnable in despawnables)
                     {
                         if (despawnable != null)

@@ -21,6 +21,8 @@ GameObject:
   - component: {fileID: 4198296650720544}
   - component: {fileID: 33389034152694150}
   - component: {fileID: 23577434384327620}
+  - component: {fileID: 114780807104773580}
+  - component: {fileID: 114245073468478370}
   m_Layer: 0
   m_Name: TowerRangeIndicator
   m_TagString: Untagged
@@ -83,3 +85,29 @@ MeshFilter:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1636256128134902}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &114245073468478370
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1636256128134902}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4936caf0b8994eb5933313738146fa81, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Enabled: 1
+  MaxOpacity: 0.5
+  DistanceToFullFade: 2
+  MeshRenderers: []
+--- !u!114 &114780807104773580
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1636256128134902}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5bf10cdea1344482e91a4f2b58506b77, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

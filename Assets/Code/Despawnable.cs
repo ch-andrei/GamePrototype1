@@ -8,26 +8,26 @@ namespace Code
 {
     public class Despawnable : MonoBehaviour
     {
-        public bool AllowDespawn = false;
-        public bool ForceDespawn = false;
+        public bool AllowDespawn = false; // toggles ability of object to be despawned
         
-        public float TimeToLive = 0;
-
-        [HideInInspector] public float TimeAtSpawn;
-        [HideInInspector] public float TimeAtDespawnAnimationStart
-        {
-            get => Animated.AnimationTimeStart;
-            set => Animated.AnimationTimeStart = value;
-        }
+        // time between the object is spawned and its despawn animation is played
+        // undefined if -1 (object will not despawn until manuall triggered)
+        public float TimeBeforeDespawnStart = 0;
         
-        [HideInInspector] public List<MeshRenderer> MeshRenderers;
+        public TimeAnimatedFloat TimeAnimatedFloat;
+        
+        [HideInInspector] public bool EnqueueDespawn = false; // true to start despawn animation on
+        [HideInInspector] public bool StartDespawn = false; // true if despawn process has started
+        [HideInInspector] public bool ForceDespawn = false; // true if despawn is to be immediately applied
 
-        public Animated Animated;
+        [HideInInspector] public float TimeAtSpawn; // time from which despawn timeout will be computed
+        
+        [HideInInspector] public List<MeshRenderer> MeshRenderers; // will animate fade effect on these materials
 
         public void Start()
         {
             TimeAtSpawn = Time.time;
-            MeshRenderers = Utilities.GetComponentsInChildren<MeshRenderer>(this.transform);
+            MeshRenderers = Utilities.GetComponentsInHierarchy<MeshRenderer>(this.transform);
         }
     }
 }

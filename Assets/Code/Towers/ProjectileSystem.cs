@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using Code.Towers.Components;
 using UnityEngine;
 using Unity.Entities;
+using Random = System.Random;
 
 namespace Code.Towers
 {
@@ -22,6 +24,13 @@ namespace Code.Towers
         public EProjectileType Type;
         public float Force;
     }
+
+    public struct ProjectileColisionData
+    {
+        public bool Hit;
+        public Vector3 HitPosition;
+        public GameObject HitObject;
+    }
     
     public class ProjectileSystem : ComponentSystem
     {
@@ -30,7 +39,7 @@ namespace Code.Towers
             public int Length;
             public ComponentArray<Transform> Transforms;
             public ComponentArray<Projectile> Projectiles;
-//            public ComponentArray<Collider> colliders;
+            public ComponentArray<Despawnable> Despawnables;
         }
     
         [Inject] TurretProjectile TurretProjectiles;
@@ -43,49 +52,68 @@ namespace Code.Towers
             {
                 Transform transform = TurretProjectiles.Transforms[i];
                 Projectile projectile = TurretProjectiles.Projectiles[i];
-//                Collider collider = turretProjectiles.colliders[i];
+                Despawnable despawnable = TurretProjectiles.Despawnables[i];
 
-                Vector3 posAfterColisionCheck = transform.position;
-                if (CheckCollision(transform, projectile, out posAfterColisionCheck))
+                ProjectileColisionData colisionData = CheckCollision(transform, projectile);
+                if (colisionData.Hit)
                 {
                     if (projectile.ProjectileType == EProjectileType.DirectImpact)
                     {
-                        DirectImpactCollison(posAfterColisionCheck);
+                        DirectImpactColision(colisionData);
                     }
                     else if (projectile.ProjectileType == EProjectileType.Explosive)
                     {
-                        ExplosiveCollision(posAfterColisionCheck);
+                        ExplosiveColision(colisionData);
                     }
                     else
                     {
                         // TODO
+                        // handle other projectile type colisions
                     }
 
+                    // update
                     projectile.PreviousPosition = transform.position;
+                    
+                    // force immediate despawn of the projectile
+                    despawnable.ForceDespawn = true;
                 }
             }
         }
 
-        private static bool CheckCollision(Transform transform, Projectile projectile, out Vector3 posColision)
+        private static ProjectileColisionData CheckCollision(Transform transform, Projectile projectile)
         {
             Vector3 posCrt = transform.position;
             Vector3 posPrev = projectile.PreviousPosition;
+            Vector3 toCrt = posCrt - posPrev;
 
-            posColision = Vector3.zero;
+            ProjectileColisionData colisionData = new ProjectileColisionData();
+            
+            RaycastHit raycastHit;
+            // TODO: maybe use Physics.SphereCast instead
+            colisionData.Hit = Physics.Raycast(posPrev, toCrt.normalized, out raycastHit, 
+                maxDistance: toCrt.magnitude);
+
+            if (colisionData.Hit)
+            {
+                colisionData.HitPosition = raycastHit.point;
+                colisionData.HitObject = raycastHit.collider.gameObject;
+            }
             
             projectile.PreviousPosition = transform.position;
-            
-            return false;
+
+            return colisionData;
         }
 
-        private static void DirectImpactCollison(Vector3 posColision)
+        private static void DirectImpactColision(ProjectileColisionData colisionData)
         {
-            
+            // do nothing
         }
         
-        private static void ExplosiveCollision(Vector3 posColision)
+        private static void ExplosiveColision(ProjectileColisionData colisionData)
         {
-            
+            GameObject explosion = GameObject.Instantiate(Bootstrapper.PrefabManager.Explosion);
+            explosion.transform.rotation = Quaternion.LookRotation(UnityEngine.Random.onUnitSphere);
+            explosion.transform.position = colisionData.HitPosition;
         }
 
     }

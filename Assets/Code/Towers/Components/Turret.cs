@@ -16,8 +16,8 @@ public class Turret : MonoBehaviour
     public float MaxRotationSpeedRadians => MathFunctions.Angles.Deg2Rad(MaxRotationSpeed);
     
     // maximum X rotation (up/down) angle in relation to horizon 
-    [Range(0f, 90f)] public float MaxRotationX = 25f; 
-    public float MaxRotationXRadians => MathFunctions.Angles.Deg2Rad(MaxRotationX);
+    [Range(0f, 90f)] public float MaxRotationXVertical = 25f; 
+    public float MaxRotationXVerticalRadians => MathFunctions.Angles.Deg2Rad(MaxRotationXVertical);
 
     [Range(0.0001f, 1f)] public float IdleNewDirectionProbability = 0.005f;
 

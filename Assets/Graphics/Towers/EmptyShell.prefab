@@ -55,7 +55,7 @@ Transform:
   m_GameObject: {fileID: 1875901310366166}
   m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.04, y: 0.06, z: 0.04}
+  m_LocalScale: {x: 0.05, y: 0.08, z: 0.05}
   m_Children: []
   m_Father: {fileID: 4869991031639948}
   m_RootOrder: 0
@@ -153,14 +153,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4792c9ff45916ba4ca2137634b5c7ad7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowDespawn: 0
-  ForceDespawn: 0
-  TimeBeforeDespawn: 5
-  TimeAtSpawn: 3.4028235e+38
-  MeshRenderers:
-  - {fileID: 23752296645315302}
-  Animated:
-    AnimationTime: 1
+  AllowDespawn: 1
+  TimeBeforeDespawnStart: 5
+  TimeAnimatedFloat:
+    Enabled: 1
+    AnimationTime: 0.25
+    AnimationTimeDelay: 0
     Start: 1
     End: 0
     Curve:
@@ -169,26 +167,31 @@ MonoBehaviour:
       - serializedVersion: 3
         time: 0
         value: 0
-        inSlope: 1
-        outSlope: 1
-        tangentMode: 34
+        inSlope: 2
+        outSlope: 2
+        tangentMode: 0
         weightedMode: 0
         inWeight: 0
         outWeight: 0
       - serializedVersion: 3
         time: 1
         value: 1
-        inSlope: 1
-        outSlope: 1
-        tangentMode: 34
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
         weightedMode: 0
         inWeight: 0
         outWeight: 0
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-    Enabled: 1
     AnimationTimeStart: 0
+  EnqueueDespawn: 0
+  StartDespawn: 0
+  ForceDespawn: 0
+  TimeAtSpawn: 3.4028235e+38
+  MeshRenderers:
+  - {fileID: 23752296645315302}
 --- !u!136 &136673036311372652
 CapsuleCollider:
   m_ObjectHideFlags: 1

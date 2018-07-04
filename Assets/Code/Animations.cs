@@ -5,34 +5,75 @@ using UnityEngine;
 
 namespace Code
 {
-    [System.Serializable] public class Animated
+    // TODO: refactor -> add this to other Animated -> inheritance
+    // need to adjust all animations to work once refactored
+    [System.Serializable] public class SimpleAnimated
     {
-        [Range(0.01f, 100f)] public float AnimationTime;
+        public bool Enabled = true;
         
         public float Start;
         public float End;
-
+        
         public AnimationCurve Curve;
 
-        public bool Enabled;
-    
-        [HideInInspector] public float AnimationTimeStart;
-
-        public Animated()
+        public SimpleAnimated()
         {
-            AnimationTime = 1;
-            Curve = AnimationCurve.Linear(0, 0, 1, 1);
+            // default values
             Enabled = true;
+            Start = 1f;
+            End = 0f;
+            Curve = AnimationCurve.Linear(0, 0, 1, 1);
         }
     }
     
-    [System.Serializable] public class DespawnableAnimated : Animated
+    [System.Serializable] public class TimeAnimatedFloat
     {
-        public DespawnableAnimated() : base()
+        public bool Enabled = true;
+     
+        [Range(0f, 100f)] public float AnimationTime;
+        [Range(0f, 100f)] public float AnimationTimeDelay;
+        
+        public float Start;
+        public float End;
+        
+        public AnimationCurve Curve;
+
+        [HideInInspector] public float AnimationTimeStart;
+        [HideInInspector] public float AnimationTimeStartDelayed => AnimationTimeStart + AnimationTimeDelay;
+
+        public TimeAnimatedFloat()
         {
-            AnimationTime = 1;
+            // default values
+            Enabled = true;
+            AnimationTime = 1f;
+            AnimationTimeDelay = 0f;
+            Start = 1f;
+            End = 0f;
             Curve = AnimationCurve.Linear(0, 0, 1, 1);
-            Enabled = false;
         }
     }
+    
+    [System.Serializable] public class AnimatedColor
+    {
+        public Color Start;
+        public Color End;
+        
+        public AnimationCurve Curve;
+        
+        public AnimatedColor()
+        {
+            Start = Color.magenta;
+            End = Color.magenta;
+        }
+    }
+    
+//    [System.Serializable] public class DespawnableAnimated : Animated
+//    {
+//        public DespawnableAnimated() : base()
+//        {
+//            AnimationTime = 1;
+//            Curve = AnimationCurve.Linear(0, 0, 1, 1);
+//            Enabled = false;
+//        }
+//    }
 }
