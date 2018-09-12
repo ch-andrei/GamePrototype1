@@ -1,11 +1,13 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Entities;
 
 using Code.Tools;
 
 namespace Code
 {
+    [RequireComponent(typeof(GameObjectEntity))]
     public class Despawnable : MonoBehaviour
     {
         public bool AllowDespawn = false; // toggles ability of object to be despawned
@@ -15,6 +17,8 @@ namespace Code
         public float TimeBeforeDespawnStart = 0;
         
         public TimeAnimatedFloat TimeAnimatedFloat;
+
+        public bool IsPooledObject = false;
         
         [HideInInspector] public bool EnqueueDespawn = false; // true to start despawn animation on
         [HideInInspector] public bool StartDespawn = false; // true if despawn process has started
@@ -22,12 +26,12 @@ namespace Code
 
         [HideInInspector] public float TimeAtSpawn; // time from which despawn timeout will be computed
         
-        [HideInInspector] public List<MeshRenderer> MeshRenderers; // will animate fade effect on these materials
+        [HideInInspector] public List<MeshRenderer> Renderers; // animate fade on these during despawn
 
         public void Start()
         {
             TimeAtSpawn = Time.time;
-            MeshRenderers = Utilities.GetComponentsInHierarchy<MeshRenderer>(this.transform);
+            Renderers = Utilities.GetComponentsInHierarchy<MeshRenderer>(this.transform);
         }
     }
 }

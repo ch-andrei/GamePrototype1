@@ -1,9 +1,7 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using Boo.Lang;
+﻿using Boo.Lang;
 using UnityEngine;
 
-namespace MathFunctions {
+namespace Code.Tools {
     public static class Easing
     {
         public static float Smoothstart2(float x)

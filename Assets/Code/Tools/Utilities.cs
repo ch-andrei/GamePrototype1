@@ -106,21 +106,21 @@ namespace Code.Tools
                 case EWarpType.EUniformSquare:
                 {
                     float2 p = SquareToUniformSquare(sample);
-                    warped = new float3(p.x, p.y, Epsilon);
+                    warped = new float3(p.x, p.y, 0);
                     break;
                 }
 
                 case EWarpType.EUniformDisk:
                 {
                     float2 p = SquareToUniformDisk(sample);
-                    warped = new float3(p.x, p.y, Epsilon);
+                    warped = new float3(p.x, p.y, 0);
                     break;
                 }
 
                 case EWarpType.EConcentricDisk:
                 {
                     float2 p = SquareToConcentricDisk(sample);
-                    warped = new float3(p.x, p.y, Epsilon);
+                    warped = new float3(p.x, p.y, 0);
                     break;
                 }
                 case EWarpType.EUniformSphere:

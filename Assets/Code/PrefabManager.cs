@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace Code
 {
@@ -15,5 +16,10 @@ namespace Code
         
         // Explosives
         public GameObject Explosion;
+        
+        // LineDrawer
+        public GameObject LineDrawer;
+        
+        public List<ObjectPool> ObjectPools;
     }
 }

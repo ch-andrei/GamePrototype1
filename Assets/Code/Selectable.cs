@@ -6,19 +6,22 @@ using Unity.Entities;
 using UnityEngine.UI;
 
 namespace Code
-{
+{    
+    [RequireComponent(typeof(GameObjectEntity))]
     public class Selectable : MonoBehaviour
     {
         public bool Enabled = true;
-
-        [Range(0.01f, 1f)] public float MaxOpacity = 0.15f;
-        [Range(0.01f, 100f)] public float DistanceToFullFade = 1f;
         
-        [HideInInspector] public List<MeshRenderer> MeshRenderers;
+        [HideInInspector] public List<SelectableObject> SelectionIndicators;
 
         public void Start()
         {
-            MeshRenderers = Utilities.GetComponentsInHierarchy<MeshRenderer>(this.transform);
+            SelectionIndicators = Utilities.GetComponentsInHierarchy<SelectableObject>(this.transform);
+            
+            if (SelectionIndicators.Count == 0)
+                Debug.Log("Got zero selectables.");
+            
+//            Debug.Log("GOT MY SELECTABLES");
         }
     }
 }

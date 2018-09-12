@@ -10,7 +10,10 @@ using System;
 public class CameraControl : MonoBehaviour
 {
     public float globalSensitivity = 1f; // global camera speed sensitivity
-
+    
+    public bool fovAffectsSensitivity = true; // whether if camera FOV is used to scale sensitivity
+    public float fovSensitivityModifier = 0.5f;
+    
     #region MouseControlConfiguration
 
     // camera scrolling sensitivity
@@ -146,12 +149,6 @@ public class CameraControl : MonoBehaviour
         restrictCamera();
     }
 
-    // LateUpdate  is called once per frame after all Update are done
-    void LateUpdate()
-    {
-
-    }
-
     public void toggleCenterOnPlayer()
     {
         toggleCenterPointFocus = !toggleCenterPointFocus;
@@ -191,6 +188,8 @@ public class CameraControl : MonoBehaviour
 
         forward.y = 0;
         right.y = 0;
+        forward.Normalize();
+        right.Normalize();
 
         if (Input.GetKey(KeyCode.W) || (allowEdgeScrolling && Input.mousePosition.y >= Screen.height - edgeScrollDetectBorderThickness))
         {
@@ -282,11 +281,19 @@ public class CameraControl : MonoBehaviour
 
     private void processCameraDeltas(Vector3 positionDelta, Vector3 rotationDelta, float fovDelta)
     {
+        float fovModifier = 1f - fovSensitivityModifier * (1f - Camera.main.fieldOfView / cameraFovMax);
+        
         if (allowCameraInertia)
         {
             inertiaPositionDelta = inertiaPositionDelta * inertiaDecay + positionDelta * (1f - inertiaDecay);
             inertiaRotationDelta = inertiaRotationDelta * inertiaDecay + rotationDelta * (1f - inertiaDecay);
             inertiaFovDelta = inertiaFovDelta * inertiaDecay + fovDelta * (1f - inertiaDecay);
+        }
+
+        if (fovAffectsSensitivity)
+        {
+            inertiaPositionDelta *= fovModifier;
+            inertiaRotationDelta *= fovModifier;
         }
 
         // apply position delta

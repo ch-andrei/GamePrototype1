@@ -1,4 +1,5 @@
-﻿using Unity.Entities;
+﻿using Code.Tools;
+using Unity.Entities;
 using UnityEngine;
 
 namespace Code
@@ -21,9 +22,6 @@ namespace Code
             // raycast from mouse position
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             bool hit = Physics.Raycast(ray, out var hitInfo);
-
-            Vector3 hitPos = hitInfo.point;
-            hitPos.y = 0;
             
             for (int i = 0; i < SelectableComponents.Length; i++)
             {
@@ -32,28 +30,46 @@ namespace Code
 
                 if (selectable != null && transform != null)
                 {
-                    if (hit && selectable.Enabled)
+                    if (selectable.Enabled)
                     {
-                        Vector3 pos = transform.position;
-                        pos.y = 0;
-
-                        var meshRenderers = selectable.MeshRenderers;
-
-                        float lerp = 1f - Mathf.Clamp(
-                                         Vector3.Distance(pos, hitPos) / selectable.DistanceToFullFade,
-                                         0f, 1f);
-                        float alpha = selectable.MaxOpacity * MathFunctions.Easing.Smoothstep2(lerp);
-
-                        if (alpha <= SelectableInactiveEpsilon)
-                            alpha = 0f;
-                        
-                        for (int j = 0; j < meshRenderers.Count; j++)
+                        float distance;
+                        if (hit)
                         {
-                            var meshRenderer = meshRenderers[j];
-
-                            Color color = meshRenderer.material.color;
-                            color.a = alpha;
-                            meshRenderer.material.color = color;
+                            Vector3 pos = transform.position;
+                            Vector3 hitPos = hitInfo.point;
+                            distance = Vector3.Distance(pos, hitPos);
+                        }
+                        else
+                        {
+                            distance = float.MaxValue;
+                        }
+                        
+                        foreach (var selectableObject in selectable.SelectionIndicators)
+                        {
+                            float alpha;
+                            if (hit)
+                            {
+                                float lerp = 1f - Mathf.Clamp(
+                                                 Mathf.Max(distance - selectableObject.DistanceBeforeFade, 0f) 
+                                                 / selectableObject.DistanceToFullFade, 
+                                                 0f, 1f);
+                                alpha = selectableObject.MaxOpacity * Easing.Smoothstep2(lerp);
+                                alpha = alpha <= SelectableInactiveEpsilon ? 0 : alpha;
+                            }
+                            else
+                            {
+                                alpha = 0f;
+                            }
+                            
+                            var renderers = selectableObject.SelectionRenderers;
+                            for (int j = 0; j < renderers.Count; j++)
+                            {
+                                var renderer = renderers[j];
+                            
+                                Color color = renderer.material.color;
+                                color.a = alpha;
+                                renderer.material.color = color;
+                            }
                         }
                     }
                     else

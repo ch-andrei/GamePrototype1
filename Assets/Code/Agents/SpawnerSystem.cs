@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using Code;
+using Code.Agents.Components;
+using Code.Components;
 using Unity.Entities;
 using UnityEngine;
 
@@ -30,7 +32,14 @@ public class SpawnerSystem : ComponentSystem {
                 for (int j = 0; j < spawner.NumObjectsSpawned; j++)
                 {
                     var spawnedObject = Object.Instantiate(spawner.SpawnedObject, spawner.transform);
+                    
                     spawnedObject.transform.parent = Agents.transform;
+                    
+                    Vector3 pos = WarpSampler.Warp(WarpSampler.EWarpType.EUniformDisk);
+                    pos.z = pos.y;
+                    pos.y = 0;
+                    
+                    spawnedObject.transform.position += spawner.SpawnDistance * pos;
                     
                     var despawnables = Utilities.GetComponentsInHierarchy<Despawnable>(spawnedObject.transform);
                     foreach (var despawnable in despawnables)

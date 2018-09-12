@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using Code.Towers.Components;
 using UnityEngine;
 using Unity.Entities;
-using Random = System.Random;
+
+using Code;
 
 namespace Code.Towers
 {
@@ -13,7 +13,6 @@ namespace Code.Towers
     {
         Explosive,
         DirectImpact,
-        EmptyShell,
     }
     
     public struct ProjectileSpawnData
@@ -47,36 +46,47 @@ namespace Code.Towers
         protected override void OnUpdate()
         {
             var deltaTime = Time.deltaTime;
+            var time = Time.time;
 
             for (int i = 0; i < TurretProjectiles.Length; i++)
             {
-                Transform transform = TurretProjectiles.Transforms[i];
-                Projectile projectile = TurretProjectiles.Projectiles[i];
-                Despawnable despawnable = TurretProjectiles.Despawnables[i];
+                var transform = TurretProjectiles.Transforms[i];
+                var projectile = TurretProjectiles.Projectiles[i];
+                var despawnable = TurretProjectiles.Despawnables[i];
 
+//                // draw line for bullet trajectory
+//                GameObject linePrefab = Bootstrapper.PrefabManager.LineDrawer;
+//                GameObject line = GameObject.Instantiate(linePrefab, transform);
+//                var lineRenderer = line.GetComponent<LineRenderer>();
+//                lineRenderer.SetPosition(0, transform.position);
+//                lineRenderer.SetPosition(1, projectile.PreviousPosition);
+                
                 ProjectileColisionData colisionData = CheckCollision(transform, projectile);
                 if (colisionData.Hit)
                 {
                     if (projectile.ProjectileType == EProjectileType.DirectImpact)
                     {
-                        DirectImpactColision(colisionData);
+                        DirectImpactColision(colisionData, projectile);
                     }
                     else if (projectile.ProjectileType == EProjectileType.Explosive)
                     {
-                        ExplosiveColision(colisionData);
+                        ExplosiveColision(colisionData, projectile);
                     }
                     else
                     {
-                        // TODO
-                        // handle other projectile type colisions
+                        // TODO: handle other projectile type colisions
+                        Debug.Log("Unknown projectile type collided with a surface.");
                     }
-
+                    
                     // update
-                    projectile.PreviousPosition = transform.position;
+                    projectile.PreviousPosition = colisionData.HitPosition;
                     
                     // force immediate despawn of the projectile
                     despawnable.ForceDespawn = true;
                 }
+                
+                // update position
+                projectile.PreviousPosition = transform.position;
             }
         }
 
@@ -99,21 +109,37 @@ namespace Code.Towers
                 colisionData.HitObject = raycastHit.collider.gameObject;
             }
             
-            projectile.PreviousPosition = transform.position;
-
             return colisionData;
         }
 
-        private static void DirectImpactColision(ProjectileColisionData colisionData)
-        {
-            // do nothing
+        private static void DirectImpactColision(ProjectileColisionData colisionData, Projectile projectile)
+        {            
+            // apply damage
+            // TODO: add faction
+            DamageableSystem.ApplyDamage(colisionData.HitObject, projectile.DamageOnImpact);
         }
         
-        private static void ExplosiveColision(ProjectileColisionData colisionData)
+        private static void ExplosiveColision(ProjectileColisionData colisionData, Projectile projectile)
         {
+            // spawn explosion effect
             GameObject explosion = GameObject.Instantiate(Bootstrapper.PrefabManager.Explosion);
             explosion.transform.rotation = Quaternion.LookRotation(UnityEngine.Random.onUnitSphere);
             explosion.transform.position = colisionData.HitPosition;
+            
+            // define damage
+            var explosiveProjectile = projectile.gameObject.GetComponent<ExplosiveProjectile>();
+            DamageData damageData = new DamageData()
+            {
+                DamageAmount = projectile.DamageOnImpact,
+                DamageRange = explosiveProjectile.DamageMaxRange,
+                DamageFalloff = explosiveProjectile.DamageFalloff,
+                HitPosition = colisionData.HitPosition,
+                FactionId = -1, // TODO: add faction
+            };
+            
+            // query apply damage
+            var damageFalloff = projectile.gameObject.GetComponent<ExplosiveProjectile>().DamageFalloff;
+            DamageableSystem.EnqueueApplyDamage(damageData);
         }
 
     }

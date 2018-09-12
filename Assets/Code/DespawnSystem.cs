@@ -1,10 +1,13 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Code.Towers;
 using UnityEngine;
 using Unity.Entities;
 
 namespace Code
 {
+    [UpdateAfter(typeof(SelectableSystem))]
+    [UpdateAfter(typeof(TowerAimingSystem))]
     public class DespawnSystem : ComponentSystem {
     
         struct DespawnableComponent
@@ -17,7 +20,7 @@ namespace Code
         [Inject] DespawnableComponent DespawnableComponents;
 
         public const float ForceDespawnEpsilon = 1e-3f;
-
+        
         protected override void OnUpdate()
         {
             float time = Time.time;
@@ -26,6 +29,7 @@ namespace Code
             
             for (int i = 0; i < DespawnableComponents.Length; i++)
             {
+                Transform transform = DespawnableComponents.Transforms[i];
                 Despawnable despawnable = DespawnableComponents.Despawnables[i];
 
                 if (despawnable != null && despawnable.AllowDespawn)
@@ -56,22 +60,12 @@ namespace Code
                                 else
                                 {
                                     // FADE effect
-                                    var meshRenderers = despawnable.MeshRenderers;
-
                                     float lerp = Mathf.Clamp((time - timeAnimatedFloat.AnimationTimeStartDelayed) / 
-                                                             timeAnimatedFloat.AnimationTime,
-                                        0f, 1f);
+                                                             timeAnimatedFloat.AnimationTime, 0f, 1f);
                                     float alpha = Mathf.Lerp(timeAnimatedFloat.Start, timeAnimatedFloat.End, 
                                         timeAnimatedFloat.Curve.Evaluate(lerp));
 
-                                    for (int j = 0; j < meshRenderers.Count; j++)
-                                    {
-                                        var meshRenderer = meshRenderers[j];
-
-                                        Color color = meshRenderer.material.color;
-                                        color.a = alpha;
-                                        meshRenderer.material.color = color;
-                                    }
+                                    RendererSetMatAlpha(despawnable.Renderers, alpha);
 
                                     if (alpha < ForceDespawnEpsilon)
                                     {
@@ -81,10 +75,30 @@ namespace Code
                             }
                         }
                     }
-                    
+
                     if (despawnable.ForceDespawn || destroy)
                     {
-                        toDestroy.Add(DespawnableComponents.Transforms[i].gameObject);
+                        if (despawnable.IsPooledObject)
+                        {
+                            RendererSetMatAlpha(despawnable.Renderers, 1f);
+                            
+                            // reset despawnable
+                            despawnable.TimeAtSpawn = time;
+                            despawnable.EnqueueDespawn = false;
+                            despawnable.StartDespawn = false;
+                            despawnable.ForceDespawn = false;
+
+                            // TODO: fix this!!!
+                            // TODO: do not destroy a pooled object find a way to disactivate it instead
+                            
+                            var entity = despawnable.gameObject.GetComponent<GameObjectEntity>().Entity;
+                            EntityManager.DestroyEntity(entity);
+                            transform.gameObject.SetActive(false);
+                        }
+                        else
+                        {
+                            toDestroy.Add(DespawnableComponents.Transforms[i].gameObject);
+                        }
                     }
                 }
             }
@@ -93,6 +107,18 @@ namespace Code
             foreach (var go in toDestroy)
             {
                 GameObject.Destroy(go);
+            }
+        }
+
+        private static void RendererSetMatAlpha(List<MeshRenderer> meshRenderers, float alpha)
+        {
+            for (int j = 0; j < meshRenderers.Count; j++)
+            {
+                var meshRenderer = meshRenderers[j];
+
+                Color color = meshRenderer.material.color;
+                color.a = alpha;
+                meshRenderer.material.color = color;
             }
         }
     }

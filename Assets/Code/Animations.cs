@@ -38,7 +38,7 @@ namespace Code
         
         public AnimationCurve Curve;
 
-        [HideInInspector] public float AnimationTimeStart;
+        [HideInInspector] public float AnimationTimeStart; // this must be initialized by the animation system, not spawner
         [HideInInspector] public float AnimationTimeStartDelayed => AnimationTimeStart + AnimationTimeDelay;
 
         public TimeAnimatedFloat()
@@ -63,7 +63,7 @@ namespace Code
         public AnimatedColor()
         {
             Start = Color.magenta;
-            End = Color.magenta;
+            End = Color.white;
         }
     }
     
